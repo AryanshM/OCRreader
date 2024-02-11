@@ -136,39 +136,58 @@ async def nameSearchPAN(contents):
 
 
 
-async def findIdType(extracted_text):
-    # np_array = np.frombuffer(contents, np.uint8)
-    # image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-    # screen_height, screen_width = image.shape[:2]
-    # x1=int((216/736)*screen_width)
-    # x2=int((546/736)*screen_width)
-    # y1=int((50/490)*screen_height)
-    # y2=int((80/490)*screen_height)
-    # check_for_aadhaar=[x1,y1,x2,y2]
-    # reader = easyocr.Reader(['en'])
-    # cv2.imwrite("./forAadhar.jpg",image[y1:y2,x1:x2])
-    # result1 = reader.readtext(image[y1:y2,x1:x2])
-    # print(result1)
+async def findIdType(contents):
+    np_array = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Apply Canny edge detection
+    edges = cv2.Canny(gray, 50, 150)
+
+    # Find contours in the edge-detected image
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Find the largest contour
+    largest_contour = max(contours, key=cv2.contourArea)
+
+    # Get the bounding box of the largest contour
+    x, y, w, h = cv2.boundingRect(largest_contour)
+
+    # Crop the image using the bounding box
+    cropped_image = image[y:y+h, x:x+w]
+    cv2.imwrite("./cropped.jpg",cropped_image)
+
+    screen_height, screen_width = image.shape[:2]
+    x1=int((216/736)*screen_width)
+    x2=int((546/736)*screen_width)
+    y1=int((50/490)*screen_height)
+    y2=int((80/490)*screen_height)
+    check_for_aadhaar=[x1,y1,x2,y2]
+    reader = easyocr.Reader(['en'])
+    cv2.imwrite("./forAadhar.jpg",image[y1:y2,x1:x2])
+    result1 = reader.readtext(image[y1:y2,x1:x2])
+    print(result1)
 
 
-    # a1=int((30/1024)*screen_width)
-    # a2=int((450/1024)*screen_width)
-    # b1=int((100/654)*screen_height)
-    # b2=int((160/654)*screen_height)
-    # check_for_pan=[a1,b1,a2,b2]
-    # cv2.imwrite("./forPAN.jpg",image[b1:b2,a1:a2])
+    a1=int((30/1024)*screen_width)
+    a2=int((450/1024)*screen_width)
+    b1=int((100/654)*screen_height)
+    b2=int((160/654)*screen_height)
+    check_for_pan=[a1,b1,a2,b2]
+    cv2.imwrite("./forPAN.jpg",image[b1:b2,a1:a2])
 
-    # result2 = reader.readtext(image[b1:b2,a1:a2])
-    # print(result2)
-    
-    if("Government of India" in extracted_text):
+    result2 = reader.readtext(image[b1:b2,a1:a2])
+    print(result2)
+    if(len(result1)!=0):
+        if("Government of India" in result1[0] ):
             
             return "aadhaar"
-    if("INCOME TAX DEPARTMENT" in extracted_text):
+    if(len(result2)!=0):
+        if("INCOME TAX DEPARTMENT" in result2[0]):
             
             return "PAN"
         
-    
+
     
 
 
@@ -180,7 +199,7 @@ async def process_image(file: UploadFile = File(...)):
     extracted_text = extract_text_from_image(contents)
 
 
-    idtype= await findIdType(extracted_text)
+    idtype= await findIdType(contents)
     if(idtype=="aadhaar"):
         # Extract name, DOB, and Aadhar number from the text
         dob, pan = extract_infoAadhaar(extracted_text)
@@ -192,6 +211,12 @@ async def process_image(file: UploadFile = File(...)):
         name, dob, pan = extract_infoPAN(extracted_text)
         if name==None:
             name = await nameSearchPAN(contents)
+
+    
+
+    
+    
+    
 
     # Return the results
     return {"idtype":idtype,"filename": file.filename, "text": extracted_text, "name": name, "dob": dob, "Identity Number": pan}
