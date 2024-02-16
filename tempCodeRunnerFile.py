@@ -1,0 +1,1 @@
+blurred = cv2.GaussianBlur(image, (5, 5), 0)

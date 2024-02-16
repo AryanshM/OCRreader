@@ -167,6 +167,8 @@ async def findIdType(extracted_text):
     if("INCOME TAX DEPARTMENT" in extracted_text):
             
             return "PAN"
+    else:
+        return -1
         
     
     
@@ -183,15 +185,19 @@ async def process_image(file: UploadFile = File(...)):
     idtype= await findIdType(extracted_text)
     if(idtype=="aadhaar"):
         # Extract name, DOB, and Aadhar number from the text
-        dob, pan = extract_infoAadhaar(extracted_text)
+        dob, id = extract_infoAadhaar(extracted_text)
         
         name = await nameSearchAadhaar(contents)
 
     elif(idtype=="PAN"):
         # Extract name, DOB, and Aadhar number from the text
-        name, dob, pan = extract_infoPAN(extracted_text)
+        name, dob, id = extract_infoPAN(extracted_text)
         if name==None:
             name = await nameSearchPAN(contents)
 
+    else:
+        return {"idtype":"Not Found","filename": file.filename, "text": extracted_text}
+
+
     # Return the results
-    return {"idtype":idtype,"filename": file.filename, "text": extracted_text, "name": name, "dob": dob, "Identity Number": pan}
+    return {"idtype":idtype,"filename": file.filename, "text": extracted_text, "name": name, "dob": dob, "Identity Number": id}

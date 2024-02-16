@@ -1,1 +1,2 @@
-    # img = cv2.resize(img, (widthImg, heightImg))  # RESIZE IMAGE
+    firstinstace=i+1
+                    break

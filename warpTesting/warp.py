@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import utlis
-from skimage.filters import threshold_local
 
 ########################################################################
 pathImage = "warpTesting/aryansh6.jpg"
@@ -14,17 +13,20 @@ count = 0
 while True:
     
     img = cv2.imread(pathImage)
-    h, w, _ = img.shape
-
+    
+    h=3200
+    w=2400
     
     heightImg=800
     widthImg=600
-    
 
     original_image=img
 
     img = cv2.resize(img, (widthImg, heightImg))  # RESIZE IMAGE
+    original_image=cv2.resize(original_image, (w, h))
     cv2.imwrite("warpTesting/resized.jpg",img)
+    cv2.imwrite("warpTesting/resized_original.jpg",original_image)
+
     imgBlank = np.zeros((heightImg, widthImg, 3), np.uint8)  # CREATE A BLANK IMAGE FOR TESTING DEBUGGING IF REQUIRED
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # CONVERT IMAGE TO GRAY SCALE
     imgBlur = cv2.GaussianBlur(imgGray, (5,5), 1)  # ADD GAUSSIAN BLUR
@@ -44,22 +46,44 @@ while True:
     biggest, maxArea = utlis.biggestContour(contours)  # FIND THE BIGGEST CONTOUR
     if biggest.size != 0:
         
+        biggest_original=np.copy(biggest)
+        print(biggest_original[0][0][1])
+        biggest_original[0][0][0]*=int(w/widthImg)
+        biggest_original[0][0][1]*=int(w/widthImg)
+
+        biggest_original[1][0][0]*=int(w/widthImg)
+        biggest_original[1][0][1]*=int(w/widthImg)
+
+        biggest_original[2][0][0]*=int(w/widthImg)
+        biggest_original[2][0][1]*=int(w/widthImg)
+
+        biggest_original[3][0][0]*=int(w/widthImg)
+        biggest_original[3][0][1]*=int(w/widthImg)
+        print("biggest",biggest)
+        print(biggest.shape)
+
+        print("biggest original", biggest_original)
         
         biggest = utlis.reorder(biggest)
+        biggest_original=utlis.reorder(biggest_original)
+        
         
         cv2.drawContours(imgBigContour, biggest, -1, (0, 255, 0), 20)  # DRAW THE BIGGEST CONTOUR
         imgBigContour = utlis.drawRectangle(imgBigContour, biggest, 2)
         pts1 = np.float32(biggest)  # PREPARE POINTS FOR WARP
+        pts1_original=np.float32(biggest_original)
         pts2 = np.float32([[0, 0], [widthImg, 0], [0, heightImg], [widthImg, heightImg]])  # PREPARE POINTS FOR WARP
+        pts2_original=np.float32([[0, 0], [w, 0], [0, h], [w, h]]) 
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
+        matrix_original=cv2.getPerspectiveTransform(pts1_original, pts2_original)
         
         
         imgWarpColored = cv2.warpPerspective(img, matrix, (widthImg, heightImg),flags=cv2.INTER_CUBIC)
-
+        imgWarpColored_original=cv2.warpPerspective(original_image, matrix_original, (w, h),flags=cv2.INTER_CUBIC)
         # # REMOVE 20 PIXELS FROM EACH SIDE
         # imgWarpColored = imgWarpColored[20:imgWarpColored.shape[0] - 20, 20:imgWarpColored.shape[1] - 20]
         # imgWarpColored = cv2.resize(imgWarpColored, (widthImg, heightImg))
-
+        
         
 
         # APPLY ADAPTIVE THRESHOLD
@@ -91,10 +115,15 @@ while True:
     
     # SAVE IMAGE WHEN 's' key is pressed
     if cv2.waitKey(1) & 0xFF == ord('s'):
-
+        imgWarpColored_original=cv2.resize(imgWarpColored_original,(1300,840))
+        cv2.imwrite("warpTesting/WarpColored_original.jpg",imgWarpColored_original)
 
         imgWarpColoredresized=cv2.resize(imgWarpColored,(650,410))
         cv2.imwrite("warpTesting/warpColored.jpg",imgWarpColoredresized)
+
+    
+        
+
         cv2.rectangle(stackedImage, ((int(stackedImage.shape[1] / 2) - 230), int(stackedImage.shape[0] / 2) + 50),
                       (1100, 350), (0, 255, 0), cv2.FILLED)
         cv2.putText(stackedImage, "Scan Saved", (int(stackedImage.shape[1] / 2) - 200, int(stackedImage.shape[0] / 2)),
@@ -104,4 +133,6 @@ while True:
         count += 1
     if(cv2.waitKey(1) & 0xFF == ord('s')):
         cv2.destroyAllWindows()
+
+    
     
