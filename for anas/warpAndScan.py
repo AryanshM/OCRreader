@@ -4,7 +4,7 @@ import utlis
 import easyocr
 import re
 
-image="warpTesting/aryansh6.jpg"
+image="./aryansh6.jpg"
 
 def warpAndScan(image):
     
