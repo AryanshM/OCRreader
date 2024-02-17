@@ -9,7 +9,7 @@ image="./aryansh6.jpg"
 def warpAndScan(image):
     
     
-    img = cv2.imread(image)
+    img = cv2.imread(image,cv2.IMREAD_COLOR)
     
     h=1600
     w=1200

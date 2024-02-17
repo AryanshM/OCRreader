@@ -3,14 +3,21 @@ import numpy as np
 import utlis
 import easyocr
 import re
+import time
 
-image="warpTesting/aryansh6.jpg"
 
-def warpAndScan(image):
+start = time.time()
+
+image_path="G:/Downloads/for anas/aryansh6.jpg"
+
+def warpAndScan(image_path):
+    
+    # np_array = np.frombuffer(contents, np.uint8)
+    # img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
     
     
-    img = cv2.imread(image)
-    
+    img = cv2.imread(image_path,cv2.IMREAD_COLOR)
+    print("reading image")
     h=1600
     w=1200
     
@@ -85,10 +92,11 @@ def warpAndScan(image):
 
         imgWarpColored_original=cv2.resize(imgWarpColored_original,(1300,840))
 
-       
+        print("warped")
         reader = easyocr.Reader(['en','hi'])
         result = reader.readtext(imgWarpColored_original)
         text = ' '.join([entry[1] for entry in result])
+        print(text)
     return text
 
 
@@ -103,39 +111,48 @@ def frontOrBack(text):
         return "front"
 
 def extractFront(text):
-        
+        # searching for keyword name ie a PAN card
         # searching for name in front 
-        start = text.find("DO8")
-        if(start==-1):
-            start = text.find("D08")
-        if(start==-1):
-            start = text.find("D08")
-        if(start==-1):
-            start = text.find("D0B")
-        if(start==-1):
-            start = text.find("DOB")
+        if text.find("Name") != -1:
+            print("name found")
+            name_pattern = r'\bName(?:\s*:\s*|\s+)(\w+\s+\w+)\b'
+            name_match = re.search(name_pattern, text)
+            name = name_match.group(1) if name_match else None
+        # if keyword name not found in text
+        # likely a aadhaar card
+        if text.find("Name") == -1:
+            # searching for name in front 
+            start = text.find("DO8")
+            if(start==-1):
+                start = text.find("D08")
+            if(start==-1):
+                start = text.find("D08")
+            if(start==-1):
+                start = text.find("D0B")
+            if(start==-1):
+                start = text.find("DOB")
 
 
 
-        print(start)
-        name=""
-        english="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        firstinstace=-1
-        secondInstanceace=-1
-        for i in range(start-1,-1,-1):
+            print(start)
+            name=""
+            english="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            firstinstace=-1
+            secondInstanceace=-1
+            for i in range(start-1,-1,-1):
 
-            if text[i] in english:
-                secondInstance=i
-                break
-        for i in range(i-1,-1,-1):
-
-            if text[i] not in english:
-                if(text[i].isspace()==False):
-                    firstinstace=i+1
+                if text[i] in english:
+                    secondInstance=i
                     break
-            
+            for i in range(i-1,-1,-1):
 
-        name=text[firstinstace+1:secondInstance+1]
+                if text[i] not in english:
+                    if(text[i].isspace()==False):
+                        firstinstace=i+1
+                        break
+                
+
+            name=text[firstinstace+1:secondInstance+1]
         # for dob
 
         dob_pattern = r"(\d{2}/\d{2}/\d{4})"
@@ -146,15 +163,27 @@ def extractFront(text):
         # for id number
         aadhar_pattern = r"\b\d{4}\s?\d{4}\s?\d{4}\b"
         aadhar_match = re.search(aadhar_pattern, text)
+    
+        if aadhar_match is not None:
+            id = aadhar_match.group() if aadhar_match else None
+            return name,dob, id 
+        if aadhar_match is None:
+            desired_length = 10
 
-        if aadhar_match:
-            id= aadhar_match.group() if aadhar_match else None
-        else:
-           pan_pattern = r"[A-Z]{5}[0-9]{4}[A-Z]{1}"
-           pan_match= re.search(pan_pattern, text)
-           id = pan_match.group() if pan_match else None
+            words = text.split()
+            result_words = [word for word in words if len(word) == desired_length]
+            
+            for word in result_words:
+                count_numbers = sum(char.isdigit() for char in word)
+                if(count_numbers>=2 and count_numbers<=6):
+                    id= word
+                    return name, dob, id
+        
+        
+        # return name,dob,None
 
-        return name, dob, id
+
+
 def extractBack(extracted_text):
     # Extract text between "address" and a 12-digit number
     
@@ -181,8 +210,9 @@ def extractBack(extracted_text):
 
 
 
-    
-text=warpAndScan(image)
+print("reading")
+text=warpAndScan(image_path)
+print("read successful")
 id, address, dob, name= None, None, None, None
 frontOrBack = frontOrBack(text)
 if frontOrBack == "back":
@@ -191,4 +221,7 @@ if frontOrBack == "back":
 if frontOrBack == "front":
     id, dob, name = extractFront(text)
 
-return id, address, dob, name
+print(id, dob, name, address)
+
+end = time.time()
+print(str(end-start)+ " secs")
