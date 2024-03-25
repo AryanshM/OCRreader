@@ -4,12 +4,10 @@ import utlis
 import easyocr
 import re
 import time
-import pytesseract
 
-languages = 'eng+hin'
+
 start = time.time()
 
-image_path="warpTesting/aryansh6.jpg"
 
 def warpAndScan(image_path):
     
@@ -95,12 +93,11 @@ def warpAndScan(image_path):
         imgWarpColored_original_gray = cv2.cvtColor(imgWarpColored_original, cv2.COLOR_BGR2GRAY)  # CONVERT IMAGE TO GRAY SCALE
 
         print("warped")
-        # reader = easyocr.Reader(['en','hi'])
-        # result = reader.readtext(imgWarpColored_original_gray)
-        result  = pytesseract.image_to_string(imgWarpColored_original_gray, lang=languages)
-        # text = ' '.join([entry[1] for entry in result])
-        print(result)
-    return result
+        reader = easyocr.Reader(['en','hi'])
+        result = reader.readtext(imgWarpColored_original_gray)
+        text = ' '.join([entry[1] for entry in result])
+        print(text)
+    return text
 
 
      
@@ -141,7 +138,7 @@ def extractFront(text):
             name=""
             english="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
             firstinstace=-1
-            secondInstance=-1
+            secondInstanceace=-1
             for i in range(start-1,-1,-1):
 
                 if text[i] in english:
@@ -212,6 +209,7 @@ def extractBack(extracted_text):
     
 
 
+image_path=".jpg"
 
 print("reading")
 text=warpAndScan(image_path)
